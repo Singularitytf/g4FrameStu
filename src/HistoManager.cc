@@ -185,7 +185,9 @@ void HistoManager::RecordStep(const G4Step *aStep)
     }
   }
 
-  if (fParticle == "gamma" and fTrackID != 1 and fTrackID != fBremGammaTrackID){
+  if (fParticle == "gamma"
+      and fTrackID != 1
+      and fTrackID != fBremGammaTrackID){
 
     for (size_t i = 0;
          i < fCompteTrackIDVec.size();
