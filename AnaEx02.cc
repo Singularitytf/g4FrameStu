@@ -47,6 +47,9 @@
 #include "SteppingAction.hh"
 #include "SteppingVerbose.hh"
 #include "HistoManager.hh"
+#include "G4PhysListFactory.hh"
+#include "G4VModularPhysicsList.hh"
+
 
 #ifdef G4MULTITHREADED
 #include "G4MTRunManager.hh"
@@ -76,7 +79,7 @@ int main(int argc,char** argv)
    G4VSteppingVerbose::SetInstance(new SteppingVerbose);
 
 #ifdef G4MULTITHREADED
-   G4int nThreads = 8;
+   G4int nThreads = 28;
    G4MTRunManager *runManager = new G4MTRunManager;
    runManager->SetNumberOfThreads(nThreads);
 #else
@@ -86,11 +89,10 @@ int main(int argc,char** argv)
   //
   DetectorConstruction* detector = new DetectorConstruction;
   runManager->SetUserInitialization(detector);
+  G4PhysListFactory factory;
+  G4VModularPhysicsList* physlist = factory.GetReferencePhysList("QBBC_LIV");
 
-
-  //runManager->SetUserInitialization(new QBBC);
-
-  runManager->SetUserInitialization(new DMXPhysicsList);
+  runManager->SetUserInitialization(physlist);
   runManager->SetUserInitialization(new ActionInitialization(detector));
 
 

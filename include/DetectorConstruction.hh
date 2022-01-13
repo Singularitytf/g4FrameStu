@@ -39,6 +39,7 @@
 
 #include "G4VUserDetectorConstruction.hh"
 #include "globals.hh"
+#include "G4ThreeVector.hh"
 
 class G4Box;
 class G4Tubs;
@@ -63,20 +64,23 @@ class DetectorConstruction : public G4VUserDetectorConstruction
   public:
      G4Material *GetTargetFoilMaterial() { return fTargetMat; }
      const G4VPhysicalVolume *GetphysiWorld() { return fPhysiWorld; };
-     const G4VPhysicalVolume *GetGeDetector() { return fPComptTargetFoil; };
+     const G4VPhysicalVolume *GetCsIDetector() const { return fPComptTarget; };
+     const G4VPhysicalVolume *GetHPGe() const { return fPHPGe; };
 
   private:
   // Define mat.
      G4Material *fWorldMaterial;
-     G4Material *fTargetMat;
+     G4Material *fTargetMat, *fHPGeMat;
   // Define World Geo.
      G4Box *fSolidWorld;
      G4LogicalVolume *fLogicWorld;
      G4VPhysicalVolume *fPhysiWorld;
   // Define Compton target foil.
-     G4Tubs *fComptTargetFoil;
-     G4LogicalVolume *fLVComptTargetFoil;
-     G4VPhysicalVolume *fPComptTargetFoil;
+     G4Box *fComptTarget;
+     G4Tubs *fHPGe;
+     G4LogicalVolume *fLVComptTarget, *fLVHPGe;
+     G4VPhysicalVolume *fPComptTarget, *fPHPGe;
+     G4ThreeVector fHPGePosition;
 
   private:
      G4bool fCheckOverlaps;

@@ -42,6 +42,7 @@
 #include "G4Track.hh"
 #include <fstream>
 #include <vector>
+#include <set>
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 class DetectorConstruction;
@@ -60,7 +61,7 @@ public:
   void Book();
   void Save();
   void FillTuple();
-  void RecordComptEnergy();
+  void recordDepEng();
   void RecordGammaFinalAngle();
   // Following Func show primary photon generate electron.
   void ShowProcessGenerateEle(const G4Step *aStep);
@@ -76,7 +77,6 @@ public:
   void EndOfEventAction(const G4Event *);
 
   void RecordStep(const G4Step *);
-
 private:
   G4double preX, preY, preZ;
 
@@ -87,14 +87,15 @@ private:
   DetectorConstruction *fDetector;
 
   // Recordstep
-  G4int fNumOfComptAtGe, fCompteTrackID, fTrackID, fParentID,
-    fBremGammaTrackID, fNumOfBremGamma, fNumOfe, ftmp;
-  G4double  fAngle, fComptEnergy, fGammaFinalEnergy, fBremDepEnergy,
-    fBremGammaEnergy, fPostKEnergy, ftmpEnergy;
-  G4String fProcess;
+  //G4bool fHPGeFire, fFoilFire;
+  G4int fNumOfComptAtGe, fTrackID, fParentID, fNumOfe, ftmp, NbOfEvents, pMProcNum, pNBrem;
+  G4double  fAngle, fCsIDepEng, fGammaFinalEnergy,
+    fHPGeEng, fPostKEnergy, ftmpEnergy, fEeBrem, fEeBremO;
+  G4String fProcess, fGenerator;
   G4VPhysicalVolume *fVolume, *fPostVolume;
   G4Track *aTrack;
   std::vector<G4int> fCompteTrackIDVec;
+  std::set<G4String> fLProcName, fLevProcName;
 
   // RecordGammaFinalAngle
   G4ThreeVector fpostMomentum;

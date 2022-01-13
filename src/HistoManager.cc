@@ -59,7 +59,7 @@
 
 HistoManager::HistoManager(DetectorConstruction *det)
     : fFactoryOn(false),
-      fPrintModulo(100000),
+      fPrintModulo(1000000),
       fDetector(det)
 {
 }
@@ -75,6 +75,7 @@ HistoManager::~HistoManager()
 void HistoManager::BeginOfRunAction(const G4Run *aRun)
 {
   G4cout << "### Run " << aRun->GetRunID() << " start." << G4endl;
+  
   Book();
 }
 
@@ -82,32 +83,29 @@ void HistoManager::BeginOfRunAction(const G4Run *aRun)
 
 void HistoManager::EndOfRunAction(const G4Run *aRun)
 {
-  G4int NbOfEvents = aRun->GetNumberOfEvent();
+  NbOfEvents = aRun->GetNumberOfEventToBeProcessed(); 
   if (NbOfEvents == 0)
     return;
   Save();
+  // for (auto it = fLevProcName.begin(); it != fLevProcName.end(); ++it)
+  //     std::cout << *it<< std::endl;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void HistoManager::BeginOfEventAction(const G4Event *evt)
 {
-  G4int evtNb = evt->GetEventID();
-  if (evtNb % fPrintModulo == 0)
-    G4cout << "\n---> Begin of event: " << evtNb << G4endl;
-
   // initialisation per event
-  fNumOfComptAtGe = 0;//在Ge中发生的康普顿次数
-  fNumOfBremGamma = 0;
-  fNumOfe = 0;
-  fAngle = 0.;     //经过Ge之后gamma的散射角度
-  fComptEnergy = 0.;
-  fBremDepEnergy = 0.;
-  ftmp = 0;
-  fCompteTrackID = 0;
-  fBremGammaTrackID = 0;
-  fCompteTrackIDVec.clear();
-
+  // fNumOfComptAtGe = 0;//在Ge中发生的康普顿次数
+  // fAngle = 0.;     //经过Ge之后gamma的散射角度
+  fCsIDepEng = 0.;
+  fHPGeEng = 0.;
+  // ftmp = 0.;
+  fEeBrem = 0.;
+  fEeBremO = 0.;
+  pNBrem = 0;
+  // fLProcName.clear();
+  // pMProcNum = 0;
   // G4cout << "----------A new Event!----------" << std::endl;
 }
 
@@ -115,6 +113,16 @@ void HistoManager::BeginOfEventAction(const G4Event *evt)
 
 void HistoManager::EndOfEventAction(const G4Event *)
 {
+  // Mapping physics process to a number;
+  // 1. Rayl, 2. compt, 4. eBrem 8. phot 16. Scintillation
+  // pProcNum = 0;
+  // for (auto it = fLProcName.begin(); it != fLProcName.end(); ++it) {
+  //   if (*it == "Rayl")        pProcNum += 1;
+  //   else if (*it == "compt")  pProcNum += 2;
+  //   else if (*it == "eBrem")  pProcNum += 4;
+  //   else if (*it == "phot")   pProcNum += 8;
+  //   else if (*it == "Scintillation") pProcNum += 16;
+  // }
   // fill tuple
   FillTuple();
   //ShowCompteTrackStatus(fCompteTrackIDVec);
@@ -136,14 +144,14 @@ void HistoManager::RecordStep(const G4Step *aStep)
   //
   fVolume = aStep->GetPreStepPoint()->GetTouchableHandle()->GetVolume();
   fPostVolume = aStep->GetPostStepPoint()->GetTouchableHandle()->GetVolume();
-
-  //粒子在这步结束的动能
+  fpostMomentum = aStep->GetPostStepPoint()->GetMomentumDirection();
   fPostKEnergy = aStep->GetPostStepPoint()->GetKineticEnergy() / keV;
-
   //在这一步的过程的反应
   fProcess = aStep->GetPostStepPoint()
     ->GetProcessDefinedStep()->GetProcessName();
-
+  // G4cout << "work?" << G4endl;
+  // fLvingProc = aStep->GetTrack()->GetCreatorProcess()->GetProcessName();
+  // G4cout << "work?" << G4endl;
   //获得沉积下来的能量
   ftmpEnergy =
     aStep->GetTotalEnergyDeposit() / keV;
@@ -151,89 +159,76 @@ void HistoManager::RecordStep(const G4Step *aStep)
   // Get Track
   //
   aTrack = aStep->GetTrack();
-
   fTrackID = aTrack->GetTrackID();
   fParentID = aTrack->GetParentID();
-  //这几行说了track是啥东西，从那来，叫什么轨迹
   fParticle = aTrack->GetDefinition()->GetParticleName();
-  fpostMomentum = aStep->GetPostStepPoint()->GetMomentum();
-
-  //考虑Ge探测器中的问题
-  //1、所有step在Ge中的所有沉积能量 一个粒子跑完产生的沉积能量
-  // if (volume == fDetector->GetFirstDetector())
-  // {
-  //   //Ge内所有沉积能量(包含退激发gamma)
-  //   fGeEnergy += tmpEnergy;
-  // }
+  // G4cout << "work?" << G4endl;
 
 
+  // fLProcName.insert(fProcess);
+  /*
+  if (fVolume == fDetector->GetHPGe()
+      and fPostVolume == fDetector->GetphysiWorld()) {
+    // G4cout << fLvingProc << G4endl;
+    if (fTrackID != 1) {
+      // 记录次级粒子
+      fLvingProc = aStep->GetTrack()->GetCreatorProcess()->GetProcessName();
+      pSProcNum = 0;
+      if (fLvingProc == "eBrem")               pSProcNum = 4;
+      else if (fLvingProc == "phot")           pSProcNum = 5;
+      else if (fLvingProc == "Scintillation")  pSProcNum = 6;
+    }
+    if (fTrackID == 1) {
+      pMProcNum = 0;
+    }
+  }
+  */
+
+  // if (fPostVolume == fDetector->GetHPGe() and fVolume == fDetector->GetphysiWorld()) fLevProcName.insert(fParticle);
 
   //Record compton energy and times of compt scattring.
-  RecordComptEnergy();
-  RecordGammaFinalAngle();
-
-
-  // Cross check the electron number. If it's a different ele, count!.
-  if (fParentID == 1 and fParticle == "e-" and fCompteTrackID != fTrackID){
-    auto fCreatorProcess = aTrack->GetCreatorProcess()->GetProcessName();
-    // G4cout << "This ele is created by: " << fCreatorProcess << std::endl;
-    if (fCreatorProcess == "compt"){
-      // G4cout << "Find a Compton e-!" << std::endl;
-      fCompteTrackID = fTrackID;
-      fCompteTrackIDVec.push_back(fTrackID);
-      // ftmp++; // record the first order e- particle.
-    }
+  // RecordGammaFinalAngle();
+  //recordDepEng();
+  if (fVolume == fDetector->GetCsIDetector()) {
+    fCsIDepEng += ftmpEnergy;
+    if (fProcess == "eBrem") fEeBrem += ftmpEnergy;
+  }
+  if (fVolume == fDetector->GetHPGe()) {
+    fHPGeEng += ftmpEnergy;
   }
 
-  if (fParticle == "gamma"
-      and fTrackID != 1
-      and fTrackID != fBremGammaTrackID){
+  // if (fVolume == fDetector->GetCsIDetector() and fPostVolume == fDetector->GetphysiWorld()) {
+  //   if (fTrackID != 1) {
+  //     fGenerator = aStep->GetTrack()->GetCreatorProcess()->GetProcessName();
+  //     if (fGenerator == "eBrem" and fParticle == "gamma") {
+  //       fEeBremO += fPostKEnergy;
+  //       pNBrem++;
+  //     }
+  //   }
+  // }
 
-    for (size_t i = 0;
-         i < fCompteTrackIDVec.size();
-         ++i){
-      auto fCreatorProcess = aTrack->GetCreatorProcess()->GetProcessName();
-      if (fParentID == fCompteTrackIDVec.at(i) and
-          fCreatorProcess == "eBrem"){
-        //G4cout << "find eBrem gamma." << std::endl;
-        // Which means it's a Compton ele's secondary particles.
-        fBremGammaTrackID = fTrackID;
-        fNumOfBremGamma++;
-        //fBremGammaEnergy += aTrack->GetTotalEnergy() / keV;
-        fBremGammaEnergy = ftmpEnergy / keV;
-        //G4cout << fBremGammaEnergy << std::endl;
-        /*
-        G4cout << "--------------BremStatus--------------" << std::endl;
-        G4cout << "Brem gamma's ParentID is :" << fParentID << std::endl;
-        G4cout << "The energy of brem Gamma is : " << fBremGammaEnergy
-               << std::endl;
-        G4cout << "----------TheEndOfBremStatus----------" << std::endl;
-        */
-      }
-    }
+  // if (fVolume == fDetector->GetCsIDetector() and fPostVolume == fDetector->GetphysiWorld()) {
+  //   if (fTrackID == 1) pMProcNum = 1;
+  //     else {
+  //       fGenerator = aStep->GetTrack()->GetCreatorProcess()->GetProcessName();
+  //       if (fGenerator  == "eBrem") pMProcNum = 2;
+  //       else if (fGenerator  == "eIoni") pMProcNum = 3;
+  //       else if (fGenerator  == "compt") pMProcNum = 4;
+  //       else if (fGenerator  == "phot") pMProcNum = 5;
+  //       else G4cout << fGenerator << G4endl;
+  //     }
+  //   }
   }
 
-  if (fProcess == "eBrem"){
-    fBremDepEnergy += ftmpEnergy / keV;
-      // std::cout << "find Bremsstrahung!" << std::endl;
 
-  }
 
-  if (fTrackID == 1 and fParentID == 0
-      and aStep->IsFirstStepInVolume()
-      and fVolume == fDetector->GetGeDetector()){
-    // G4cout << "Gamma initial energy is: "
-    //    << aTrack->GetTotalEnergy() / keV << std::endl;
-  }
-
-}
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void HistoManager::RecordComptEnergy(){
-  if (fVolume == fDetector->GetGeDetector())
+void HistoManager::recordDepEng(){
+  if (fVolume == fDetector->GetCsIDetector())
   {
-    fNumOfComptAtGe++;
-    fComptEnergy += ftmpEnergy;
+    
+    fCsIDepEng += ftmpEnergy;
     /*
       // Method faild.
     auto subParticles = aStep->GetSecondaryInCurrentStep();
@@ -253,23 +248,23 @@ void HistoManager::RecordComptEnergy(){
 
 void HistoManager::RecordGammaFinalAngle(){
   //在离开Ge时获取散射角度
-  if (fVolume == fDetector->GetGeDetector()
+  if (fVolume == fDetector->GetCsIDetector()
       and fPostVolume == fDetector->GetphysiWorld()
       and fTrackID == 1 and fParentID == 0)
   {
-
+    preX = 1; preY = 0; preZ = 0;
     postX = fpostMomentum.x();
     postY = fpostMomentum.y();
     postZ = fpostMomentum.z();
+    // std::cout << postX << std::endl;
 
-    auto up = preX * postX + preY * postY + preZ * postZ;
-    auto down = sqrt(preX * preX + preY * preY + preZ * preZ) *
-      sqrt(postX * postX + postY * postY + postZ * postZ);
+    auto up = preX * postX;
+    auto down = sqrt(postX * postX + postY * postY + postZ * postZ);
 
     fAngle = acos(up / down) * 180 / TMath::Pi();
     fGammaFinalEnergy = fPostKEnergy;
-    //不考虑角度单多次离开Ge的动能//compton散射后粒子的能量
-    //G4cout << "Gamma leaving angle is: " << fAngle << std::endl;
+    // 不考虑角度单多次离开Ge的动能//compton散射后粒子的能量
+    // G4cout << "Gamma leaving angle is: " << fAngle << std::endl;
   }
   return;
 }
@@ -330,18 +325,16 @@ void HistoManager::Book()
   }
   fFactoryOn = true;
 
-  analysisManager->CreateNtuple("Compton", "Compton info");
-  analysisManager->CreateNtupleDColumn(0, "TotalDepEnergy");
-  analysisManager->CreateNtupleDColumn(0, "gammaFinalAngle");
-  analysisManager->CreateNtupleIColumn(0, "numOfComptAtGe");
-  analysisManager->CreateNtupleDColumn(0, "gammaFinalEnergy");
+  analysisManager->CreateNtuple("e", "");
+  analysisManager->CreateNtupleDColumn(0, "e_csi");
+  analysisManager->CreateNtupleDColumn(0, "e_hpge");
   analysisManager->FinishNtuple(0);
 
-  analysisManager->CreateNtuple("Bremsstrahung", "Compton secondary effect eBrem");
-  analysisManager->CreateNtupleDColumn(1, "BremDepEnergy");
-  analysisManager->CreateNtupleDColumn(1, "BremGammaEnergy");
-  analysisManager->CreateNtupleIColumn(1, "NumOfBremGamma");
-  analysisManager->FinishNtuple(1);
+  // analysisManager->CreateNtuple("eBrem", "");
+  // analysisManager->CreateNtupleDColumn(1, "e_brem");
+  // analysisManager->CreateNtupleDColumn(1, "e_brem_o");
+  // analysisManager->CreateNtupleIColumn(1, "n_brem");
+  // analysisManager->FinishNtuple(1);
 
   G4cout << "\n----> Output file is open in " << fileName << G4endl;
 }
@@ -353,29 +346,24 @@ void HistoManager::FillTuple(){
   //
   G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
 
-  if (fNumOfComptAtGe != 0){
-
-    analysisManager->FillNtupleDColumn(0, 0, fComptEnergy);
-    analysisManager->FillNtupleDColumn(0, 1, fAngle);
-    analysisManager->FillNtupleIColumn(0, 2, fNumOfComptAtGe);
-    analysisManager->FillNtupleDColumn(0, 3, fGammaFinalEnergy);
+  if (fCsIDepEng != 0 and fHPGeEng != 0){
+    //and fHPGeEng != 0
+    analysisManager->FillNtupleDColumn(0, 0, fCsIDepEng);
+    analysisManager->FillNtupleDColumn(0, 1, fHPGeEng);
     analysisManager->AddNtupleRow(0);
   }
-
-  if (fNumOfComptAtGe != 0 and fNumOfBremGamma != 0){
-    //G4cout << "haha" << std::endl;
-    analysisManager->FillNtupleDColumn(1, 0, fBremDepEnergy);
-    analysisManager->FillNtupleDColumn(1, 1, fBremGammaEnergy);
-    analysisManager->FillNtupleIColumn(1, 2, fNumOfBremGamma);
-    analysisManager->AddNtupleRow(1);
-  }
+  // if (fEeBrem != 0){
+  //   analysisManager->FillNtupleDColumn(1, 0, fEeBrem);
+  //   analysisManager->FillNtupleDColumn(1, 1, fEeBremO);
+  //   analysisManager->FillNtupleIColumn(1, 2, pNBrem);
+  //   analysisManager->AddNtupleRow(1);
+  // }
   return;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void HistoManager::Save()
-{
+void HistoManager::Save() {
   if (!fFactoryOn)
     return;
   auto analysisManager = G4AnalysisManager ::Instance();

@@ -83,6 +83,7 @@
 
 #include "G4ComptonScattering.hh"
 #include "G4LivermoreComptonModel.hh"
+#include "G4LowEPComptonModel.hh"
 
 #include "G4GammaConversion.hh"
 #include "G4BetheHeitler5DModel.hh"
@@ -366,6 +367,7 @@ void DMXPhysicsList::ConstructEM() {
 	pmanager->AddDiscreteProcess(thePhotoElectricEffect);
 	
 	G4ComptonScattering* theComptonScattering = new G4ComptonScattering();
+  // theComptonScattering->SetEmModel(new G4LowEPComptonModel());
 	theComptonScattering->SetEmModel(new G4LivermoreComptonModel());
 	pmanager->AddDiscreteProcess(theComptonScattering);
 	

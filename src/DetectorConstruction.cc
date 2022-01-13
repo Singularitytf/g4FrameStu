@@ -64,8 +64,8 @@ DetectorConstruction::DetectorConstruction()
     : G4VUserDetectorConstruction(),
       fWorldMaterial(0), fTargetMat(0),
       fSolidWorld(0), fLogicWorld(0), fPhysiWorld(0),
-      fComptTargetFoil(0), fLVComptTargetFoil(0),
-      fPComptTargetFoil(0),
+      fComptTarget(0), fLVComptTarget(0),
+      fPComptTarget(0),
       fCheckOverlaps(true)
 {
 }
@@ -85,8 +85,9 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
 void DetectorConstruction::DefineMaterials()
 {
   G4NistManager *man = G4NistManager::Instance();
-  fWorldMaterial = man->FindOrBuildMaterial("G4_AIR");
-  fTargetMat = man->FindOrBuildMaterial("G4_Ge");
+  fWorldMaterial  = man->FindOrBuildMaterial("G4_AIR");
+  fTargetMat      = man->FindOrBuildMaterial("G4_CESIUM_IODIDE");
+  fHPGeMat        = man->FindOrBuildMaterial("G4_Ge");
 
   // print table
   //
@@ -116,29 +117,40 @@ G4VPhysicalVolume *DetectorConstruction::ConstructCalorimeter()
                                   0,
                                   fCheckOverlaps);
 
-  G4int fHalfHigh = 107;
+  G4int fHalfHeight = 107;
 
   //
-  // Compton target Foil
+  // Compton target
   //
-
-  fComptTargetFoil = new G4Tubs("G4_Ge",
-                                0 * mm,
-                                8.41 * mm,
-                                8.41 * mm,
-                                0 * deg,
-                                360 * deg);
-  fLVComptTargetFoil = new G4LogicalVolume(fComptTargetFoil,
-                                           fTargetMat,
-                                           "G4_Ge");
-  fPComptTargetFoil = new G4PVPlacement(0,
-                                        G4ThreeVector(0., 0., (fHalfHigh - 12) * mm),
-                                        fLVComptTargetFoil,
-                                        "G4_Ge",
-                                        fLogicWorld,
-                                        false,
-                                        0,
-                                        fCheckOverlaps);
+  G4RotationMatrix fRTgt = G4RotationMatrix();
+  fRTgt.rotateZ(0*deg);
+  G4ThreeVector tgtPosition = G4ThreeVector(0., 0., 0 * mm);
+  G4Transform3D fTtransform = G4Transform3D(fRTgt, tgtPosition);
+  fComptTarget = new G4Box("G4_CESIUM_IODIDE",
+                                1 * cm,
+                                3 * cm,
+                                3 * cm);
+                                
+  fLVComptTarget = new G4LogicalVolume(fComptTarget,
+                                       fTargetMat,
+                                       "G4_CESIUM_IODIDE");
+  fPComptTarget =
+    new G4PVPlacement(fTtransform,
+                                    fLVComptTarget,
+                                    "G4_CESIUM_IODIDE",
+                                    fLogicWorld,
+                                    false,
+                                    0,
+                                    fCheckOverlaps);
+                                    
+  fHPGePosition = G4ThreeVector(100*std::cos(120 * deg) * cm, 100*std::sin(120 * deg) * cm, 0);
+  G4RotationMatrix fRHPGe = G4RotationMatrix();
+  fRHPGe.rotateX(0*deg);
+  G4Transform3D transform = G4Transform3D(fRHPGe, fHPGePosition);
+  fHPGe   = new G4Tubs("HPGe", 0 * mm, 8 * mm, 5 * mm, 0 * deg, 360 * deg);
+  fLVHPGe = new G4LogicalVolume(fHPGe, fHPGeMat, "HPGe");
+  fPHPGe  = new G4PVPlacement(transform, fLVHPGe, "HPGe", fLogicWorld, false, 0, fCheckOverlaps);
+                                  
 
 
   // Invisible the world.
@@ -146,7 +158,9 @@ G4VPhysicalVolume *DetectorConstruction::ConstructCalorimeter()
 
   G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
   simpleBoxVisAtt->SetVisibility(true);
-  fLVComptTargetFoil->SetVisAttributes(simpleBoxVisAtt);
+  fLVComptTarget->SetVisAttributes(simpleBoxVisAtt);
+
+
   // fLogicHPGeShield->SetVisAttributes(simpleBoxVisAtt);
   // fLogicSecondDetector->SetVisAttributes(simpleBoxVisAtt);
   // fLogicalShield->SetVisAttributes(simpleBoxVisAtt);
