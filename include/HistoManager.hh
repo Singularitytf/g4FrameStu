@@ -35,7 +35,7 @@
 #ifndef HistoManager_h
 #define HistoManager_h 1
 
-#include "g4root.hh"
+#include "G4AnalysisManager.hh"
 #include "globals.hh"
 #include "TMath.h"
 #include "DetectorConstruction.hh"
@@ -88,7 +88,7 @@ private:
 
   // Recordstep
   //G4bool fHPGeFire, fFoilFire;
-  G4int fNumOfComptAtGe, fTrackID, fParentID, fNumOfe, ftmp, NbOfEvents, pMProcNum, pNBrem;
+  G4int fNumOfComptAtGe, fTrackID, fParentID, fNumOfe, NbOfEvents, pEff, pID;
   G4double  fAngle, fCsIDepEng, fGammaFinalEnergy,
     fHPGeEng, fPostKEnergy, ftmpEnergy, fEeBrem, fEeBremO;
   G4String fProcess, fGenerator;

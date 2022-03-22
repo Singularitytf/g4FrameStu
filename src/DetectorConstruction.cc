@@ -62,10 +62,8 @@
 
 DetectorConstruction::DetectorConstruction()
     : G4VUserDetectorConstruction(),
-      fWorldMaterial(0), fTargetMat(0),
+      fWorldMaterial(0), fFoil(0),
       fSolidWorld(0), fLogicWorld(0), fPhysiWorld(0),
-      fComptTarget(0), fLVComptTarget(0),
-      fPComptTarget(0),
       fCheckOverlaps(true)
 {
 }
@@ -86,9 +84,8 @@ void DetectorConstruction::DefineMaterials()
 {
   G4NistManager *man = G4NistManager::Instance();
   fWorldMaterial  = man->FindOrBuildMaterial("G4_AIR");
-  fTargetMat      = man->FindOrBuildMaterial("G4_CESIUM_IODIDE");
+  fCsIMat         = man->FindOrBuildMaterial("G4_CESIUM_IODIDE");
   fHPGeMat        = man->FindOrBuildMaterial("G4_Ge");
-
   // print table
   //
   G4cout << *(G4Material::GetMaterialTable()) << G4endl;
@@ -117,39 +114,48 @@ G4VPhysicalVolume *DetectorConstruction::ConstructCalorimeter()
                                   0,
                                   fCheckOverlaps);
 
-  G4int fHalfHeight = 107;
-
   //
   // Compton target
   //
-  G4RotationMatrix fRTgt = G4RotationMatrix();
-  fRTgt.rotateZ(0*deg);
-  G4ThreeVector tgtPosition = G4ThreeVector(0., 0., 0 * mm);
-  G4Transform3D fTtransform = G4Transform3D(fRTgt, tgtPosition);
-  fComptTarget = new G4Box("G4_CESIUM_IODIDE",
-                                1 * cm,
-                                3 * cm,
-                                3 * cm);
-                                
-  fLVComptTarget = new G4LogicalVolume(fComptTarget,
-                                       fTargetMat,
-                                       "G4_CESIUM_IODIDE");
-  fPComptTarget =
-    new G4PVPlacement(fTtransform,
-                                    fLVComptTarget,
-                                    "G4_CESIUM_IODIDE",
-                                    fLogicWorld,
-                                    false,
-                                    0,
-                                    fCheckOverlaps);
+  G4RotationMatrix fRCsI = G4RotationMatrix();
+  fRCsI.rotateZ(0*deg);
+  G4ThreeVector csiPosition = G4ThreeVector(0, 0, 0);
+  G4Transform3D fCsITransform = G4Transform3D(fRCsI, csiPosition);
+  fCsI = new G4Box("csi",
+                    1 * cm,
+                    1 * cm,
+                    1 * cm);
+  fLVCsI = new G4LogicalVolume(fCsI,
+                              fCsIMat,
+                              "csi");
+  fPCsI = new G4PVPlacement(fCsITransform,
+                            fLVCsI,
+                            "csi",
+                            fLogicWorld,
+                            false,
+                            0,
+                            fCheckOverlaps);
                                     
-  fHPGePosition = G4ThreeVector(100*std::cos(120 * deg) * cm, 100*std::sin(120 * deg) * cm, 0);
+  fHPGePosition = G4ThreeVector(0, -10*std::sin(10 * deg) * cm, 10*std::cos(10 * deg) * cm);
   G4RotationMatrix fRHPGe = G4RotationMatrix();
-  fRHPGe.rotateX(0*deg);
+  fRHPGe.rotateX(90*deg);
   G4Transform3D transform = G4Transform3D(fRHPGe, fHPGePosition);
-  fHPGe   = new G4Tubs("HPGe", 0 * mm, 8 * mm, 5 * mm, 0 * deg, 360 * deg);
-  fLVHPGe = new G4LogicalVolume(fHPGe, fHPGeMat, "HPGe");
-  fPHPGe  = new G4PVPlacement(transform, fLVHPGe, "HPGe", fLogicWorld, false, 0, fCheckOverlaps);
+  fHPGe   = new G4Tubs("HPGe",
+                       0 * mm,
+                       8 * mm, 
+                       10 * mm, 
+                       0 * deg, 
+                       360 * deg);
+  fLVHPGe = new G4LogicalVolume(fHPGe, 
+                                fHPGeMat, 
+                                "HPGe");
+  fPHPGe  = new G4PVPlacement(transform, 
+                              fLVHPGe, 
+                              "HPGe", 
+                              fLogicWorld, 
+                              false, 
+                              0, 
+                              fCheckOverlaps);
                                   
 
 
@@ -158,7 +164,7 @@ G4VPhysicalVolume *DetectorConstruction::ConstructCalorimeter()
 
   G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
   simpleBoxVisAtt->SetVisibility(true);
-  fLVComptTarget->SetVisAttributes(simpleBoxVisAtt);
+  // fLVComptTarget->SetVisAttributes(simpleBoxVisAtt);
 
 
   // fLogicHPGeShield->SetVisAttributes(simpleBoxVisAtt);

@@ -32,10 +32,6 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-// #include <TH1D.h>
-// #include <TFile.h>
-// #include <TTree.h>
-// #include <TMath.h>
 #include <CLHEP/Units/SystemOfUnits.h>
 #include "G4SystemOfUnits.hh"
 #include "G4PhysicalConstants.hh"
@@ -87,6 +83,7 @@ void HistoManager::EndOfRunAction(const G4Run *aRun)
   if (NbOfEvents == 0)
     return;
   Save();
+  // G4cout << pEff << G4endl;
   // for (auto it = fLevProcName.begin(); it != fLevProcName.end(); ++it)
   //     std::cout << *it<< std::endl;
 }
@@ -103,7 +100,8 @@ void HistoManager::BeginOfEventAction(const G4Event *evt)
   // ftmp = 0.;
   fEeBrem = 0.;
   fEeBremO = 0.;
-  pNBrem = 0;
+  pID = 0;
+  pEff = 0;
   // fLProcName.clear();
   // pMProcNum = 0;
   // G4cout << "----------A new Event!----------" << std::endl;
@@ -191,21 +189,11 @@ void HistoManager::RecordStep(const G4Step *aStep)
   //recordDepEng();
   if (fVolume == fDetector->GetCsIDetector()) {
     fCsIDepEng += ftmpEnergy;
-    if (fProcess == "eBrem") fEeBrem += ftmpEnergy;
+  //   if (fTrackID == 1 && fProcess == "phot") pEff++;
   }
   if (fVolume == fDetector->GetHPGe()) {
     fHPGeEng += ftmpEnergy;
   }
-
-  // if (fVolume == fDetector->GetCsIDetector() and fPostVolume == fDetector->GetphysiWorld()) {
-  //   if (fTrackID != 1) {
-  //     fGenerator = aStep->GetTrack()->GetCreatorProcess()->GetProcessName();
-  //     if (fGenerator == "eBrem" and fParticle == "gamma") {
-  //       fEeBremO += fPostKEnergy;
-  //       pNBrem++;
-  //     }
-  //   }
-  // }
 
   // if (fVolume == fDetector->GetCsIDetector() and fPostVolume == fDetector->GetphysiWorld()) {
   //   if (fTrackID == 1) pMProcNum = 1;
@@ -309,13 +297,8 @@ void HistoManager::Book()
   // Creating a tree container to handle histograms and ntuples.
   // This tree is associated to an output file.
   //
-  auto analysisManager = G4AnalysisManager ::Instance();
-  analysisManager->SetVerboseLevel(1);
-  analysisManager->SetNtupleMerging(true);
-
-  G4String fileName = "AnaEx02";
-  G4bool fRootFile = analysisManager->OpenFile(fileName);
-  // fRootFile = new TFile(fileName, "RECREATE");
+  
+  G4bool fRootFile = analysisManager->OpenFile();
   if (!fRootFile)
   {
     G4cout << " HistoManager::Book :"
@@ -331,12 +314,10 @@ void HistoManager::Book()
   analysisManager->FinishNtuple(0);
 
   // analysisManager->CreateNtuple("eBrem", "");
-  // analysisManager->CreateNtupleDColumn(1, "e_brem");
-  // analysisManager->CreateNtupleDColumn(1, "e_brem_o");
-  // analysisManager->CreateNtupleIColumn(1, "n_brem");
+  // analysisManager->CreateNtupleDColumn(1, "e_csi");
   // analysisManager->FinishNtuple(1);
 
-  G4cout << "\n----> Output file is open in " << fileName << G4endl;
+  G4cout << "\n----> Output file is open." << G4endl;
 }
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -352,10 +333,11 @@ void HistoManager::FillTuple(){
     analysisManager->FillNtupleDColumn(0, 1, fHPGeEng);
     analysisManager->AddNtupleRow(0);
   }
-  // if (fEeBrem != 0){
-  //   analysisManager->FillNtupleDColumn(1, 0, fEeBrem);
-  //   analysisManager->FillNtupleDColumn(1, 1, fEeBremO);
-  //   analysisManager->FillNtupleIColumn(1, 2, pNBrem);
+  // if (fCsIDepEng>620 && fCsIDepEng<640){
+  //   // analysisManager->FillNtupleIColumn(1, 0, pEff);
+  //   // analysisManager->FillNtupleDColumn(1, 1, fEeBremO);
+  //   // G4cout << pEff << G4endl;
+  //   analysisManager->FillNtupleDColumn(1, 0, fCsIDepEng);
   //   analysisManager->AddNtupleRow(1);
   // }
   return;

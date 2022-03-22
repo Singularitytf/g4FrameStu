@@ -62,24 +62,24 @@ class DetectorConstruction : public G4VUserDetectorConstruction
      virtual G4VPhysicalVolume* Construct();
 
   public:
-     G4Material *GetTargetFoilMaterial() { return fTargetMat; }
+     G4Material *GetTargetFoilMaterial() { return fFoil; }
      const G4VPhysicalVolume *GetphysiWorld() { return fPhysiWorld; };
-     const G4VPhysicalVolume *GetCsIDetector() const { return fPComptTarget; };
+     const G4VPhysicalVolume *GetCsIDetector() const { return fPCsI; };
      const G4VPhysicalVolume *GetHPGe() const { return fPHPGe; };
 
   private:
   // Define mat.
      G4Material *fWorldMaterial;
-     G4Material *fTargetMat, *fHPGeMat;
+     G4Material *fCsIMat, *fHPGeMat, *fFoil;
   // Define World Geo.
      G4Box *fSolidWorld;
      G4LogicalVolume *fLogicWorld;
      G4VPhysicalVolume *fPhysiWorld;
   // Define Compton target foil.
-     G4Box *fComptTarget;
+     G4Box  *fCsI;
      G4Tubs *fHPGe;
-     G4LogicalVolume *fLVComptTarget, *fLVHPGe;
-     G4VPhysicalVolume *fPComptTarget, *fPHPGe;
+     G4LogicalVolume *fLVHPGe, *fLVCsI;
+     G4VPhysicalVolume *fPHPGe, *fPCsI;
      G4ThreeVector fHPGePosition;
 
   private:

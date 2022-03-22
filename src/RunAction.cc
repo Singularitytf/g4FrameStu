@@ -44,7 +44,13 @@
 RunAction::RunAction(HistoManager* histo)
 : G4UserRunAction(),
   fHistoManager(histo)
-{}
+{
+  auto analysisManager = G4AnalysisManager::Instance();
+  analysisManager->SetVerboseLevel(1);
+  analysisManager->SetDefaultFileType("root");
+  analysisManager->SetFileName("a");
+  analysisManager->SetNtupleMerging(true);
+}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
