@@ -297,7 +297,7 @@ void HistoManager::Book()
   // Creating a tree container to handle histograms and ntuples.
   // This tree is associated to an output file.
   //
-  
+  auto analysisManager = G4AnalysisManager::Instance();
   G4bool fRootFile = analysisManager->OpenFile();
   if (!fRootFile)
   {

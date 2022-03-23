@@ -57,6 +57,8 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4SolidStore.hh"
+#include "G4tgrMessenger.hh"
+#include "G4tgbVolumeMgr.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -76,102 +78,6 @@ DetectorConstruction::~DetectorConstruction()
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 G4VPhysicalVolume *DetectorConstruction::Construct()
 {
-  DefineMaterials();
-  return ConstructCalorimeter();
-}
-
-void DetectorConstruction::DefineMaterials()
-{
-  G4NistManager *man = G4NistManager::Instance();
-  fWorldMaterial  = man->FindOrBuildMaterial("G4_AIR");
-  fCsIMat         = man->FindOrBuildMaterial("G4_CESIUM_IODIDE");
-  fHPGeMat        = man->FindOrBuildMaterial("G4_Ge");
-  // print table
-  //
-  G4cout << *(G4Material::GetMaterialTable()) << G4endl;
-
-  // Clean old geometry, if any
-  //
-  G4GeometryManager::GetInstance()->OpenGeometry();
-  G4PhysicalVolumeStore::GetInstance()->Clean();
-  G4LogicalVolumeStore::GetInstance()->Clean();
-  G4SolidStore::GetInstance()->Clean();
-}
-
-G4VPhysicalVolume *DetectorConstruction::ConstructCalorimeter()
-{
-  //
-  // World
-  //
-  fSolidWorld = new G4Box("World", 10. * m, 10. * m, 10. * m);
-  fLogicWorld = new G4LogicalVolume(fSolidWorld, fWorldMaterial, "World");
-  fPhysiWorld = new G4PVPlacement(0,
-                                  G4ThreeVector(),
-                                  fLogicWorld,
-                                  "World",
-                                  0,
-                                  false,
-                                  0,
-                                  fCheckOverlaps);
-
-  //
-  // Compton target
-  //
-  G4RotationMatrix fRCsI = G4RotationMatrix();
-  fRCsI.rotateZ(0*deg);
-  G4ThreeVector csiPosition = G4ThreeVector(0, 0, 0);
-  G4Transform3D fCsITransform = G4Transform3D(fRCsI, csiPosition);
-  fCsI = new G4Box("csi",
-                    1 * cm,
-                    1 * cm,
-                    1 * cm);
-  fLVCsI = new G4LogicalVolume(fCsI,
-                              fCsIMat,
-                              "csi");
-  fPCsI = new G4PVPlacement(fCsITransform,
-                            fLVCsI,
-                            "csi",
-                            fLogicWorld,
-                            false,
-                            0,
-                            fCheckOverlaps);
-                                    
-  fHPGePosition = G4ThreeVector(0, -10*std::sin(10 * deg) * cm, 10*std::cos(10 * deg) * cm);
-  G4RotationMatrix fRHPGe = G4RotationMatrix();
-  fRHPGe.rotateX(90*deg);
-  G4Transform3D transform = G4Transform3D(fRHPGe, fHPGePosition);
-  fHPGe   = new G4Tubs("HPGe",
-                       0 * mm,
-                       8 * mm, 
-                       10 * mm, 
-                       0 * deg, 
-                       360 * deg);
-  fLVHPGe = new G4LogicalVolume(fHPGe, 
-                                fHPGeMat, 
-                                "HPGe");
-  fPHPGe  = new G4PVPlacement(transform, 
-                              fLVHPGe, 
-                              "HPGe", 
-                              fLogicWorld, 
-                              false, 
-                              0, 
-                              fCheckOverlaps);
-                                  
-
-
-  // Invisible the world.
-  fLogicWorld->SetVisAttributes(G4VisAttributes::GetInvisible());
-
-  G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
-  simpleBoxVisAtt->SetVisibility(true);
-  // fLVComptTarget->SetVisAttributes(simpleBoxVisAtt);
-
-
-  // fLogicHPGeShield->SetVisAttributes(simpleBoxVisAtt);
-  // fLogicSecondDetector->SetVisAttributes(simpleBoxVisAtt);
-  // fLogicalShield->SetVisAttributes(simpleBoxVisAtt);
-  //
-  //always return the physical World
-  //
-  return fPhysiWorld;
+  G4tgbVolumeMgr::GetInstance();
+  return G4tgbVolumeMgr::GetInstance()->ReadAndConstructDetector();
 }
