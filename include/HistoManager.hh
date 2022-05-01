@@ -43,12 +43,74 @@
 #include <fstream>
 #include <vector>
 #include <set>
+#include <deque>
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 class DetectorConstruction;
 class G4Run;
 class G4Step;
 class G4Event;
+
+class STEP
+{
+public:
+  STEP(G4int A, G4double B, G4double C, G4double D, G4double E, G4double F, G4double G, G4double H, G4String I, G4String J)
+  {
+    this->StepNumber = A;
+    this->X = B;
+    this->Y = C;
+    this->Z = D;
+    this->KE = E;
+    this->DepE = F;
+    this->StepL = G;
+    this->TrackL = H;
+    this->VOLUNAME = I;
+    this->Process = J;
+  }
+  ~STEP(){};
+  G4int StepNumber;
+  G4double X;
+  G4double Y;
+  G4double Z;
+  G4double KE;
+  G4double DepE;
+  G4double StepL;
+  G4double TrackL;
+  G4String VOLUNAME;
+  G4String Process;
+};
+class TRAK
+{
+public:
+  std::vector<STEP> v;
+  double Angle;
+  double GeEnergy;
+  double NaIEnergy;
+};
+
+class collector { // a particle information collector.
+  public:
+    G4String type;
+    G4int tid; // track id;
+    G4int pid; // parent id;
+    G4int evt_id; // event id;
+    G4double init_eng;
+    G4String crt_proc; // ceator process
+    G4String bth_vlm; // birth place
+    std::map<G4String/*Physics Volume*/, std::map<G4String/*Physics Process*/, G4double/*Energy Deposit*/> > filter;
+    void reset(G4int ftid, G4int fpid, G4int fevtid, G4String p_type, G4double eng, G4String bth_plc,G4String proc) {
+      init_eng=eng; 
+      tid=ftid; 
+      pid=fpid; 
+      evt_id=fevtid; 
+      crt_proc = proc;
+      type = p_type;
+      bth_vlm = bth_plc;
+      // G4cout << "Type is: "<<type << G4endl; 
+      filter.clear();
+    };
+    collector() : tid(0), pid(0), evt_id(0) {};
+  };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -62,7 +124,6 @@ public:
   void Save();
   void FillTuple();
   void recordDepEng();
-  void RecordGammaFinalAngle();
   // Following Func show primary photon generate electron.
   void ShowProcessGenerateEle(const G4Step *aStep);
   // Print the TrackID stroed in vector.
@@ -81,26 +142,34 @@ private:
   G4double preX, preY, preZ;
 
 
-  G4String fParticle;
   G4bool fFactoryOn;
   G4int fPrintModulo;
   DetectorConstruction *fDetector;
 
   // Recordstep
   //G4bool fHPGeFire, fFoilFire;
-  G4int fNumOfComptAtGe, fTrackID, fParentID, fNumOfe, NbOfEvents, pEff, pID;
-  G4double  fAngle, fCsIDepEng, fGammaFinalEnergy,
-    fHPGeEng, fPostKEnergy, ftmpEnergy, fEeBrem, fEeBremO;
-  G4String fProcess, fGenerator;
+  G4int fNumOfComptAtGe, fTrackID, fParentID, NumOfScat, NbOfEvents, label, fevtid;
+  G4double  fAngle, fTCsI, fGammaFinalEnergy, feBrem, feLeak,
+    fDCsI1, fDCsI2, ftmpEnergy, fPostKEnergy, fx, fy, fz, fPtce;
+  G4String fProcess, fGenerator, fParticle, fParticled;
   G4VPhysicalVolume *fVolume, *fPostVolume;
   G4Track *aTrack;
-  std::vector<G4int> fCompteTrackIDVec;
-  std::set<G4String> fLProcName, fLevProcName;
+  collector p_colle;
+  std::map<G4int, class collector> p_exist; // collect track id existed;
+  std::deque<class collector> p_stack;
+  // std::map<G4String, G4String> det_map = {{"tcsi", "0"}, {"dcsi1", "1"},{"dcsi2", "2"}}; // map detector name to its alias.
+  
 
   // RecordGammaFinalAngle
   G4ThreeVector fpostMomentum;
   G4double postX, postY, postZ;
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+  
+  std::vector<TRAK> SV;
+  TRAK trak;
+  std::ofstream ST;
 };
+  
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 

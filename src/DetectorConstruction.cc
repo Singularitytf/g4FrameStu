@@ -63,10 +63,8 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 DetectorConstruction::DetectorConstruction()
-    : G4VUserDetectorConstruction(),
-      fWorldMaterial(0), fFoil(0),
-      fSolidWorld(0), fLogicWorld(0), fPhysiWorld(0),
-      fCheckOverlaps(true)
+
+    : G4VUserDetectorConstruction()
 {
 }
 
@@ -78,6 +76,7 @@ DetectorConstruction::~DetectorConstruction()
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 G4VPhysicalVolume *DetectorConstruction::Construct()
 {
-  G4tgbVolumeMgr::GetInstance();
+  // G4cout << 'this?';
+  G4tgbVolumeMgr::GetInstance()->AddTextFile("../detector.txt");
   return G4tgbVolumeMgr::GetInstance()->ReadAndConstructDetector();
 }
