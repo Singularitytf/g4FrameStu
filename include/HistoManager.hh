@@ -158,6 +158,7 @@ private:
   std::map<G4int, class collector> p_exist; // collect track id existed;
   std::deque<class collector> p_stack;
   // std::map<G4String, G4String> det_map = {{"tcsi", "0"}, {"dcsi1", "1"},{"dcsi2", "2"}}; // map detector name to its alias.
+  G4int tag_tpe, tag_de, tag_dbrem, tag_multi_pe, tag_md_compt;
   
 
   // RecordGammaFinalAngle

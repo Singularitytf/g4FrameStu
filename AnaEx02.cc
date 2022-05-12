@@ -33,11 +33,9 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-//#include "G4RunManager.hh"
 #include "G4UImanager.hh"
 #include "FTFP_BERT.hh"
 #include "QBBC.hh"
-#include "DMXPhysicsList.hh"
 #include "G4VModularPhysicsList.hh"
 #include "ActionInitialization.hh"
 #include "DetectorConstruction.hh"
@@ -51,11 +49,7 @@
 #include "G4VModularPhysicsList.hh"
 
 
-#ifdef G4MULTITHREADED
-#include "G4MTRunManager.hh"
-#else
-#include "G4RunManager.hh"
-#endif
+#include "G4RunManagerFactory.hh"
 
 #include "G4VisExecutive.hh"
 #include "G4UIExecutive.hh"
@@ -78,13 +72,7 @@ int main(int argc,char** argv)
   }
    G4VSteppingVerbose::SetInstance(new SteppingVerbose);
 
-#ifdef G4MULTITHREADED
-   G4int nThreads = 28;
-   G4MTRunManager *runManager = new G4MTRunManager;
-   runManager->SetNumberOfThreads(nThreads);
-#else
-   G4RunManager *runManager = new G4RunManager;
-#endif
+  auto runManager = G4RunManagerFactory::CreateRunManager();
   // Set mandatory initialization classes
   //
   DetectorConstruction* detector = new DetectorConstruction;

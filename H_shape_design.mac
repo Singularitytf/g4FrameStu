@@ -1,0 +1,37 @@
+/control/verbose 0
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0 
+
+#/process/em/fluo false
+#/process/em/auger false
+#/process/em/augerCascade false
+
+#/run/numberOfThreads 1
+
+# Initialize G4 kernel
+/run/initialize
+
+
+/gps/particle gamma
+/gps/pos/type Plane
+/gps/pos/shape Rectangle
+/gps/pos/centre 0 0 -400 mm
+/gps/pos/halfx 0.625 mm
+/gps/pos/halfy 0.625 mm
+/gps/direction 0 0 1
+/gps/energy 662 keV
+
+
+/run/printProgress 10000000
+# Set file name.
+#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm.root
+#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_cu0.01mm_dh3mm.root
+#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth6mm_al0.01mm_dh3mm.root
+#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh6mm.root
+#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm_thick1.5mm.root
+#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm_thick3mm.root
+/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm_thick1.25mm.root
+#/analysis/setFileName ../../letSimuRes/t.root
+/run/beamOn 1000000000
+

@@ -72,7 +72,6 @@ void HistoManager::BeginOfRunAction(const G4Run *aRun)
 {
   G4AnalysisManager ::Instance()->Reset();
   G4cout << "### Run " << aRun->GetRunID() << " start." << G4endl;
-
   Book();
 }
 
@@ -102,6 +101,11 @@ void HistoManager::BeginOfEventAction(const G4Event *evt)
   feLeak = 0.;
   fGenerator.clear();
   fParticle.clear();
+  tag_tpe = 0;
+  tag_de = 0;
+  tag_dbrem= 0;
+  tag_multi_pe = 0;
+  tag_md_compt= 0;
   trak.Angle = 0.;
   trak.GeEnergy = 0.;
   trak.NaIEnergy = 0.;
@@ -163,38 +167,46 @@ void HistoManager::RecordStep(const G4Step *aStep)
   (p_exist[fTrackID]).filter[fVolume->GetName()][fProcess] += ftmpEnergy;
   // G4cout << "TrackId: " << fTrackID << "\t" << fVolume->GetName() << "\t" << fProcess << "\t"<< p_exist[fTrackID].filter[fVolume->GetName()][fProcess] << G4endl;
   // G4cout << p_exist[fTrackID].filter["tcsi"]["compt"] << G4endl;
+  
 
   if (fVolume->GetName() == "tcsi")
   {
     fTCsI += ftmpEnergy;
     // 如果粒子出现在target中，记录trackid。
-    if (fTrackID == 1 && fProcess == "compt")
-    {
-      NumOfScat++;
+    if (fTrackID == 1 && fProcess == "compt") NumOfScat++;
+    if (fTrackID == 1&&fProcess=="phot") tag_tpe = 1;
+    if (fParticle=="e-"
+        &&p_exist[fTrackID].bth_vlm!="tcsi") tag_de = 1;
+    if (fParticle=="gamma"&&p_exist[fTrackID].bth_vlm=="d2csi") {
+        tag_multi_pe = 1;
     }
   }
   if (fVolume->GetName() == "d1csi")
   {
     // G4cout << "123" << G4endl;
     fDCsI1 += ftmpEnergy;
-    if (fTrackID == 1)
-    {
-      if (NumOfScat > 1)
-        label = 1;
-      // mulitple scattering.
-      label += 1;
+    if (fParticle=="e-"
+        &&p_exist[fTrackID].bth_vlm!="d1csi") tag_de = 1;
+    if (fTrackID!=1
+        &&aTrack->GetCreatorProcess()->GetProcessName()=="eBrem") tag_dbrem=1;
+    if (fParticle=="gamma"&&p_exist[fTrackID].bth_vlm=="d2csi") {
+          tag_multi_pe = 1;
     }
+    if (fTrackID==1&&fProcess=="compt") tag_md_compt=1;
   }
-  if (fVolume->GetName() == "d2csi")
-  {
+  if (fVolume->GetName() == "d2csi") {
     // G4cout << "123" << G4endl;
     fDCsI2 += ftmpEnergy;
-    // if (aStep->IsFirstStepInVolume()&&fTrackID!=1&&(f_tatget_track_id.find(fParentID)!=f_tatget_track_id.end())) {
-    //   // G4cout << "AAParntAA" << G4endl;
-    //   fGenerator = aTrack->GetCreatorProcess()->GetProcessName();
-    //   fParticled = fParticle;
-    // }
+    if (fParticle=="e-"
+        &&p_exist[fTrackID].bth_vlm!="d2csi") tag_de = 1;
+    if (fTrackID!=1
+        &&aTrack->GetCreatorProcess()->GetProcessName()=="eBrem") tag_dbrem=1;
+    if (fParticle=="gamma"&&p_exist[fTrackID].bth_vlm=="d1csi") {
+          tag_multi_pe = 1;
+    } 
+    if (fTrackID==1&&fProcess=="compt") tag_md_compt=1;
   }
+        
 
   //   if (fTrackID == 1 && fParentID == 0) {
   //   auto A = aTrack->GetCurrentStepNumber();
@@ -247,6 +259,12 @@ void HistoManager::Book()
   analysisManager->CreateNtupleDColumn(0, "dc2");
   analysisManager->CreateNtupleIColumn(0, "n");
   analysisManager->CreateNtupleIColumn(0, "evtid"); // particle.
+  analysisManager->CreateNtupleIColumn(0, "p0");
+  analysisManager->CreateNtupleIColumn(0, "b1");
+  analysisManager->CreateNtupleIColumn(0, "e1");
+  analysisManager->CreateNtupleIColumn(0, "m1");
+  analysisManager->CreateNtupleIColumn(0, "mdc"); // multi-detector compton.
+
   // analysisManager->CreateNtupleDColumn(0, "x");
   // analysisManager->CreateNtupleDColumn(0, "y");
   // analysisManager->CreateNtupleDColumn(0, "z");
@@ -260,15 +278,15 @@ void HistoManager::Book()
   analysisManager->CreateNtupleSColumn(1, "ctrp");  // creator process
   analysisManager->CreateNtupleSColumn(1, "bvm");   // birth place
   analysisManager->CreateNtupleDColumn(1, "ie");    // init energy
-  analysisManager->CreateNtupleDColumn(1, "0brem"); // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(1, "0msc");  // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(1, "0eion"); // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(1, "1brem"); // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(1, "1msc");  // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(1, "1eion"); // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(1, "2brem"); // 2 for detector CsI2.
-  analysisManager->CreateNtupleDColumn(1, "2msc");  // 2 for detector CsI2.
-  analysisManager->CreateNtupleDColumn(1, "2eion"); // 2 for detector CsI2.
+  analysisManager->CreateNtupleDColumn(1, "brem0"); // 0 for target CsI.
+  analysisManager->CreateNtupleDColumn(1, "msc0");  // 0 for target CsI.
+  analysisManager->CreateNtupleDColumn(1, "eion0"); // 0 for target CsI.
+  analysisManager->CreateNtupleDColumn(1, "brem1"); // 1 for detector CsI1.
+  analysisManager->CreateNtupleDColumn(1, "msc1");  // 1 for detector CsI1.
+  analysisManager->CreateNtupleDColumn(1, "eion1"); // 1 for detector CsI1.
+  analysisManager->CreateNtupleDColumn(1, "brem2"); // 2 for detector CsI2.
+  analysisManager->CreateNtupleDColumn(1, "msc2");  // 2 for detector CsI2.
+  analysisManager->CreateNtupleDColumn(1, "eion2"); // 2 for detector CsI2.
   analysisManager->FinishNtuple(1);
 
   analysisManager->CreateNtuple("gamma", "");
@@ -278,12 +296,12 @@ void HistoManager::Book()
   analysisManager->CreateNtupleSColumn(2, "ctrp");   // creator process
   analysisManager->CreateNtupleSColumn(2, "bvm");    // birth place
   analysisManager->CreateNtupleDColumn(2, "ie");     // init energy
-  analysisManager->CreateNtupleDColumn(2, "0pe");    // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(2, "0compt"); // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(2, "1pe");    // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(2, "1compt"); // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(2, "2pe");    // 2 for detector CsI2.
-  analysisManager->CreateNtupleDColumn(2, "2compt"); // 2 for detector CsI2.
+  analysisManager->CreateNtupleDColumn(2, "pe0");    // 0 for target CsI.
+  analysisManager->CreateNtupleDColumn(2, "compt0"); // 0 for target CsI.
+  analysisManager->CreateNtupleDColumn(2, "pe1");    // 1 for detector CsI1.
+  analysisManager->CreateNtupleDColumn(2, "compt1"); // 1 for detector CsI1.
+  analysisManager->CreateNtupleDColumn(2, "pe2");    // 2 for detector CsI2.
+  analysisManager->CreateNtupleDColumn(2, "compt2"); // 2 for detector CsI2.
   analysisManager->FinishNtuple(2);
   G4cout << "\n----> Output file is open." << G4endl;
 }
@@ -342,6 +360,11 @@ void HistoManager::FillTuple()
     analysisManager->FillNtupleDColumn(0, 2, fDCsI2);
     analysisManager->FillNtupleIColumn(0, 3, NumOfScat);
     analysisManager->FillNtupleIColumn(0, 4, fevtid);
+    analysisManager->FillNtupleIColumn(0, 5, tag_tpe);
+    analysisManager->FillNtupleIColumn(0, 6, tag_dbrem);
+    analysisManager->FillNtupleIColumn(0, 7, tag_de);
+    analysisManager->FillNtupleIColumn(0, 8, tag_multi_pe);
+    analysisManager->FillNtupleIColumn(0, 9, tag_md_compt);
     analysisManager->AddNtupleRow(0);
   }
 
