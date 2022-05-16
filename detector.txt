@@ -1,0 +1,44 @@
+// Define Paremeters
+:p half_inner 2.5 //mm
+:p half_depth  6 // mm
+:p half_dcsi_h 1.5 // mm
+:p foil_thick 0.01 // mm
+:p half_target_thickness 0.5 // mm
+
+
+
+
+// Define a 1*1*1 cubic world
+:VOLU world BOX 1.*m 1.*m 0.5*m G4_AIR
+:vis world OFF
+
+:ROTM r00 0. 0. 0.
+// Def. Target CsI
+:solid tc_all BOX 3.5*mm 3.5*mm $half_depth*mm 
+:solid tc_sub BOX $half_inner*mm (3.5-$half_target_thickness)/2*mm ($half_depth+1)*mm
+:solid tc_upper SUBTRACTION tc_all tc_sub r00 0. (3.5+$half_target_thickness)/2*mm 0. 
+:solid tcsi SUBTRACTION tc_upper tc_sub r00 0. -(3.5+$half_target_thickness)/2*mm 0. 
+:volu  tcsi tcsi G4_CESIUM_IODIDE
+:place tcsi 1 world r00 0 0 0
+
+
+// Def. Det CsI1
+:volu d1csi BOX ($half_inner-$foil_thick)*mm ($half_dcsi_h-$foil_thick)*mm ($half_depth+0)*mm G4_CESIUM_IODIDE
+:place d1csi 1 world r00 0 -($half_dcsi_h+$half_target_thickness)*mm 0
+// Def. Det CsI2
+:volu d2csi BOX ($half_inner-$foil_thick)*mm ($half_dcsi_h-$foil_thick)*mm ($half_depth+0)*mm G4_CESIUM_IODIDE
+:place d2csi 1 world r00 0 ($half_dcsi_h+$half_target_thickness)*mm 0
+
+// Def. Det Isolate Foil
+:solid foil_all BOX $half_inner*mm $half_dcsi_h*mm $half_depth*mm 
+:solid foil_sub BOX ($half_inner-$foil_thick)*mm ($half_dcsi_h-$foil_thick)*mm ($half_depth+2)*mm
+:solid f SUBTRACTION foil_all foil_sub r00 0. 0. 0.
+:volu f2 f G4_Al
+:place f2 1 world r00 0 ($half_dcsi_h+$half_target_thickness)*mm 0
+:COLOR f2 1. .1 1.
+
+// Def. Det Isolate Foil
+:volu f1 f G4_Al
+:place f1 1 world r00 0 -($half_dcsi_h+$half_target_thickness)*mm 0
+:COLOR f1 1. .1 1.
+
