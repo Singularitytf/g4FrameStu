@@ -70,9 +70,8 @@ HistoManager::~HistoManager()
 
 void HistoManager::BeginOfRunAction(const G4Run *aRun)
 {
-  G4AnalysisManager ::Instance()->Reset();
   G4cout << "### Run " << aRun->GetRunID() << " start." << G4endl;
-  Book();
+  Book(aRun);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -237,12 +236,13 @@ void HistoManager::RecordStep(const G4Step *aStep)
 
 // ....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void HistoManager::Book()
+void HistoManager::Book(const G4Run *aRun)
 {
   // Creating a tree container to handle histograms and ntuples.
   // This tree is associated to an output file.
   //
   auto analysisManager = G4AnalysisManager::Instance();
+  analysisManager->Reset();
   G4bool fRootFile = analysisManager->OpenFile();
   if (!fRootFile)
   {
@@ -252,57 +252,59 @@ void HistoManager::Book()
     return;
   }
   fFactoryOn = true;
+  if ( !(aRun->GetRunID()) ) {
+    analysisManager->CreateNtuple("eng", "");
+    analysisManager->CreateNtupleDColumn(0, "tc");
+    analysisManager->CreateNtupleDColumn(0, "dc1");
+    analysisManager->CreateNtupleDColumn(0, "dc2");
+    analysisManager->CreateNtupleIColumn(0, "n");
+    analysisManager->CreateNtupleIColumn(0, "evtid"); // particle.
+    analysisManager->CreateNtupleIColumn(0, "p0");
+    analysisManager->CreateNtupleIColumn(0, "b1");
+    analysisManager->CreateNtupleIColumn(0, "e1");
+    analysisManager->CreateNtupleIColumn(0, "m1");
+    analysisManager->CreateNtupleIColumn(0, "mdc"); // multi-detector compton.
 
-  analysisManager->CreateNtuple("eng", "");
-  analysisManager->CreateNtupleDColumn(0, "tc");
-  analysisManager->CreateNtupleDColumn(0, "dc1");
-  analysisManager->CreateNtupleDColumn(0, "dc2");
-  analysisManager->CreateNtupleIColumn(0, "n");
-  analysisManager->CreateNtupleIColumn(0, "evtid"); // particle.
-  analysisManager->CreateNtupleIColumn(0, "p0");
-  analysisManager->CreateNtupleIColumn(0, "b1");
-  analysisManager->CreateNtupleIColumn(0, "e1");
-  analysisManager->CreateNtupleIColumn(0, "m1");
-  analysisManager->CreateNtupleIColumn(0, "mdc"); // multi-detector compton.
+    // analysisManager->CreateNtupleDColumn(0, "x");
+    // analysisManager->CreateNtupleDColumn(0, "y");
+    // analysisManager->CreateNtupleDColumn(0, "z");
+    // analysisManager->CreateNtupleDColumn(0, "e");
+    analysisManager->FinishNtuple(0);
 
-  // analysisManager->CreateNtupleDColumn(0, "x");
-  // analysisManager->CreateNtupleDColumn(0, "y");
-  // analysisManager->CreateNtupleDColumn(0, "z");
-  // analysisManager->CreateNtupleDColumn(0, "e");
-  analysisManager->FinishNtuple(0);
+    analysisManager->CreateNtuple("e", "");
+    analysisManager->CreateNtupleIColumn(1, "tid");
+    analysisManager->CreateNtupleIColumn(1, "pid");
+    analysisManager->CreateNtupleIColumn(1, "evtid");
+    analysisManager->CreateNtupleSColumn(1, "ctrp");  // creator process
+    analysisManager->CreateNtupleSColumn(1, "bvm");   // birth place
+    analysisManager->CreateNtupleDColumn(1, "ie");    // init energy
+    analysisManager->CreateNtupleDColumn(1, "brem0"); // 0 for target CsI.
+    analysisManager->CreateNtupleDColumn(1, "msc0");  // 0 for target CsI.
+    analysisManager->CreateNtupleDColumn(1, "eion0"); // 0 for target CsI.
+    analysisManager->CreateNtupleDColumn(1, "brem1"); // 1 for detector CsI1.
+    analysisManager->CreateNtupleDColumn(1, "msc1");  // 1 for detector CsI1.
+    analysisManager->CreateNtupleDColumn(1, "eion1"); // 1 for detector CsI1.
+    analysisManager->CreateNtupleDColumn(1, "brem2"); // 2 for detector CsI2.
+    analysisManager->CreateNtupleDColumn(1, "msc2");  // 2 for detector CsI2.
+    analysisManager->CreateNtupleDColumn(1, "eion2"); // 2 for detector CsI2.
+    analysisManager->FinishNtuple(1);
 
-  analysisManager->CreateNtuple("e", "");
-  analysisManager->CreateNtupleIColumn(1, "tid");
-  analysisManager->CreateNtupleIColumn(1, "pid");
-  analysisManager->CreateNtupleIColumn(1, "evtid");
-  analysisManager->CreateNtupleSColumn(1, "ctrp");  // creator process
-  analysisManager->CreateNtupleSColumn(1, "bvm");   // birth place
-  analysisManager->CreateNtupleDColumn(1, "ie");    // init energy
-  analysisManager->CreateNtupleDColumn(1, "brem0"); // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(1, "msc0");  // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(1, "eion0"); // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(1, "brem1"); // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(1, "msc1");  // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(1, "eion1"); // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(1, "brem2"); // 2 for detector CsI2.
-  analysisManager->CreateNtupleDColumn(1, "msc2");  // 2 for detector CsI2.
-  analysisManager->CreateNtupleDColumn(1, "eion2"); // 2 for detector CsI2.
-  analysisManager->FinishNtuple(1);
-
-  analysisManager->CreateNtuple("gamma", "");
-  analysisManager->CreateNtupleIColumn(2, "tid");
-  analysisManager->CreateNtupleIColumn(2, "pid");
-  analysisManager->CreateNtupleIColumn(2, "evtid");
-  analysisManager->CreateNtupleSColumn(2, "ctrp");   // creator process
-  analysisManager->CreateNtupleSColumn(2, "bvm");    // birth place
-  analysisManager->CreateNtupleDColumn(2, "ie");     // init energy
-  analysisManager->CreateNtupleDColumn(2, "pe0");    // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(2, "compt0"); // 0 for target CsI.
-  analysisManager->CreateNtupleDColumn(2, "pe1");    // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(2, "compt1"); // 1 for detector CsI1.
-  analysisManager->CreateNtupleDColumn(2, "pe2");    // 2 for detector CsI2.
-  analysisManager->CreateNtupleDColumn(2, "compt2"); // 2 for detector CsI2.
-  analysisManager->FinishNtuple(2);
+    analysisManager->CreateNtuple("gamma", "");
+    analysisManager->CreateNtupleIColumn(2, "tid");
+    analysisManager->CreateNtupleIColumn(2, "pid");
+    analysisManager->CreateNtupleIColumn(2, "evtid");
+    analysisManager->CreateNtupleSColumn(2, "ctrp");   // creator process
+    analysisManager->CreateNtupleSColumn(2, "bvm");    // birth place
+    analysisManager->CreateNtupleDColumn(2, "ie");     // init energy
+    analysisManager->CreateNtupleDColumn(2, "pe0");    // 0 for target CsI.
+    analysisManager->CreateNtupleDColumn(2, "compt0"); // 0 for target CsI.
+    analysisManager->CreateNtupleDColumn(2, "pe1");    // 1 for detector CsI1.
+    analysisManager->CreateNtupleDColumn(2, "compt1"); // 1 for detector CsI1.
+    analysisManager->CreateNtupleDColumn(2, "pe2");    // 2 for detector CsI2.
+    analysisManager->CreateNtupleDColumn(2, "compt2"); // 2 for detector CsI2.
+    analysisManager->FinishNtuple(2);
+  }
+  
   G4cout << "\n----> Output file is open." << G4endl;
 }
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

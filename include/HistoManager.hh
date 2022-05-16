@@ -120,7 +120,7 @@ public:
   HistoManager(DetectorConstruction *);
   ~HistoManager();
 
-  void Book();
+  void Book(const G4Run *aRun);
   void Save();
   void FillTuple();
   void recordDepEng();
