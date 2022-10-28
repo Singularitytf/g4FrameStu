@@ -6,10 +6,14 @@
 #/process/em/fluo false
 #/process/em/auger false
 #/process/em/augerCascade false
+/run/setCutForAGivenParticle gamma 0.1 um
+/process/em/deexcitationIgnoreCut true 
 
 #/run/numberOfThreads 1
 
+
 # Initialize G4 kernel
+/detector/fileName ../geom/thickTarget_1.5mm.txt
 /run/initialize
 
 
@@ -17,21 +21,13 @@
 /gps/pos/type Plane
 /gps/pos/shape Rectangle
 /gps/pos/centre 0 0 -400 mm
-/gps/pos/halfx 0.625 mm
-/gps/pos/halfy 0.625 mm
+/gps/pos/halfx 0.5 mm
+/gps/pos/halfy 0.5 mm
 /gps/direction 0 0 1
 /gps/energy 662 keV
 
 
 /run/printProgress 10000000
 # Set file name.
-#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm.root
-#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_cu0.01mm_dh3mm.root
-#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth6mm_al0.01mm_dh3mm.root
-#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh6mm.root
-#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm_thick1.5mm.root
-#/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm_thick3mm.root
-/analysis/setFileName ../../letSimuRes/hshape_1e9_innerx5mm_depth12mm_al0.01mm_dh3mm_thick1.25mm.root
-#/analysis/setFileName ../../letSimuRes/t.root
-/run/beamOn 1000000000
-
+/analysis/setFileName ../../letSimuRes/a.root
+/run/beamOn 100000000

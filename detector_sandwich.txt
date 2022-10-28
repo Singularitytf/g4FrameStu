@@ -1,0 +1,26 @@
+// Define a 1*1*1 cubic world
+:VOLU world BOX 1.*m 1.*m 0.5*m G4_AIR
+:vis world OFF
+
+:ROTM r00 0. 0. 0.
+// Def. Target CsI
+:volu tcsi BOX 0.5*mm 0.5*mm 3*mm G4_CESIUM_IODIDE
+:place tcsi 1 world r00 0 0 0
+
+
+// Def. Det CsI1
+:volu d1csi BOX 1*cm 0.3*cm 1.*cm G4_CESIUM_IODIDE
+:place d1csi 1 world r00 0 -3.51*mm 0
+// Def. Det CsI2
+:volu d2csi BOX 1*cm 0.3*cm 1.*cm G4_CESIUM_IODIDE
+:place d2csi 1 world r00 0 3.51*mm 0
+
+// Def. Det Isolate Foil
+:volu f1 BOX 1.*cm 0.005*mm 1.*cm G4_Cu
+:place f1 1 world r00 0 -0.505*mm 0 
+:COLOR f1 1. .1 1.
+
+// Def. Det Isolate Foil
+:volu f2 BOX 1.*cm 0.005*mm 1.*cm G4_Cu
+:place f2 1 world r00 0 0.505*mm 0 
+:COLOR f2 1. .1 1.

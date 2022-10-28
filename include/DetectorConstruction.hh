@@ -40,6 +40,7 @@
 #include "G4VUserDetectorConstruction.hh"
 #include "globals.hh"
 #include "G4ThreeVector.hh"
+#include "G4GenericMessenger.hh"
 
 class G4Box;
 class G4Tubs;
@@ -60,12 +61,14 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 
   public:
      virtual G4VPhysicalVolume* Construct();
-
   public:
-
+    G4String _det_file_name;
   private:
      G4bool fCheckOverlaps;
-     G4VPhysicalVolume* ConstructCalorimeter();     
+     G4VPhysicalVolume* ConstructCalorimeter();
+     void DefineCommands();
+     G4GenericMessenger* fMessenger;
+     G4VPhysicalVolume* _world = nullptr;
 };
 
 

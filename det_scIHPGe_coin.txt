@@ -1,0 +1,21 @@
+// Define a 10*10*10 cubic world
+:VOLU world BOX 1.*m 1.*m 0.5*m G4_AIR
+:vis world OFF
+
+// Define a CsI detector
+:ROTM r00 0. 0. 0.
+:VOLU csi BOX 2.*cm 2.*cm .5*cm G4_CESIUM_IODIDE
+:PLACE csi 1 world r00 0. 0. 118*mm
+
+// Define a ge detector
+//:rotm r100 90.*deg 0. 0.
+:solid ge TUBS 0.*mm 8.*mm 5.*mm 0 360
+:VOLU ge ge G4_Ge
+:PLACE ge 1 world r00 0. 0. 0.
+:COLOR ge 1. .1 1.
+
+// Define ge surroundings 
+:solid cu_cover TUBS 30.*mm 32.*mm 107.5*mm 0 360
+:volu cu cu_cover G4_Cu
+:place cu 1 world r00 0. 0. 0.
+:COLOR cu 1. .1 1.

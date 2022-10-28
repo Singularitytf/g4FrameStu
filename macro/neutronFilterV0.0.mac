@@ -1,0 +1,34 @@
+/control/verbose 0
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+
+
+#/run/numberOfThreads 1
+
+
+# Initialize G4 kernel
+/detector/fileName ../geom/simpleFilter_fe.txt
+/run/initialize
+
+
+/gps/particle neutron
+/gps/pos/type Plane
+/gps/pos/shape Rectangle
+/gps/pos/centre 0 0 -6 cm
+/gps/pos/halfx 0.5 cm
+/gps/pos/halfy 0.5 cm
+/gps/direction 0 0 1
+
+
+/gps/ene/type Pow 
+/gps/ene/alpha 0
+/gps/ene/min 4 keV
+/gps/ene/max 35 keV
+
+
+
+/run/printProgress 1000000
+# Set file name.
+/analysis/setFileName fe_1e8.root
+/run/beamOn 100000000

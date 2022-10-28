@@ -60,23 +60,44 @@
 #include "G4tgrMessenger.hh"
 #include "G4tgbVolumeMgr.hh"
 
+
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 DetectorConstruction::DetectorConstruction()
 
     : G4VUserDetectorConstruction()
 {
+  DefineCommands();
+  _det_file_name = "../detector.txt";
+  
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 DetectorConstruction::~DetectorConstruction()
 {
+  delete fMessenger;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 G4VPhysicalVolume *DetectorConstruction::Construct()
 {
-  // G4cout << 'this?';
-  G4tgbVolumeMgr::GetInstance()->AddTextFile("../detector.txt");
-  return G4tgbVolumeMgr::GetInstance()->ReadAndConstructDetector();
+  G4cout << "********det "<< _det_file_name << " File********"<< G4endl;
+  G4tgbVolumeMgr::GetInstance()->AddTextFile(_det_file_name);
+  _world = G4tgbVolumeMgr::GetInstance()->ReadAndConstructDetector();
+  return _world;
+}
+
+void DetectorConstruction::DefineCommands() {
+  fMessenger = new G4GenericMessenger(this,
+                                      "/detector/",
+                                      "Detector description");
+
+  // armAngle command
+  auto& _file_name_cmd
+    = fMessenger->DeclareProperty("fileName",
+                                  _det_file_name,
+                                  "Set detector ascii file");
+  _file_name_cmd.SetParameterName("file_name", true);
+  _file_name_cmd.SetDefaultValue("../detector.txt");
+  return;
 }

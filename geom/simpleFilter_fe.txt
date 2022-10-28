@@ -1,0 +1,15 @@
+
+
+// Define a 1*1*1 cubic world
+:VOLU world BOX 1.*m 1.*m 0.5*m G4_AIR
+:vis world OFF
+
+:ROTM r00 0. 0. 0.
+:solid filter BOX 1*cm 1*cm 5*cm
+:volu filter filter G4_Fe
+:place filter 1 world r00 0 0 0
+
+:solid counter BOX 1*cm 1*cm 0.5*cm
+:volu counter counter G4_AIR
+:place counter 1 world r00 0 0 5.5*cm
+:color 1. 1. 1. 

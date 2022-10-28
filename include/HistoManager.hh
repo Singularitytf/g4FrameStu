@@ -40,6 +40,7 @@
 #include "TMath.h"
 #include "DetectorConstruction.hh"
 #include "G4Track.hh"
+#include "G4EventManager.hh"
 #include <fstream>
 #include <vector>
 #include <set>
@@ -148,9 +149,9 @@ private:
 
   // Recordstep
   //G4bool fHPGeFire, fFoilFire;
-  G4int fNumOfComptAtGe, fTrackID, fParentID, NumOfScat, NbOfEvents, label, fevtid;
-  G4double  fAngle, fTCsI, fGammaFinalEnergy, feBrem, feLeak,
-    fDCsI1, fDCsI2, ftmpEnergy, fPostKEnergy, fx, fy, fz, fPtce;
+  G4int fNumOfComptAtGe, fTrackID, fParentID, inner_compt, outter_compt, fevtid;
+  G4double  fAngle, fTCsI, fGammaFinalEnergy,
+    fDCsI1, fDCsI2, ftmpEnergy, fPostKEnergy, fEng, fx, fy, fz, fdx, fdy, fdz;
   G4String fProcess, fGenerator, fParticle, fParticled;
   G4VPhysicalVolume *fVolume, *fPostVolume;
   G4Track *aTrack;
@@ -158,12 +159,9 @@ private:
   std::map<G4int, class collector> p_exist; // collect track id existed;
   std::deque<class collector> p_stack;
   // std::map<G4String, G4String> det_map = {{"tcsi", "0"}, {"dcsi1", "1"},{"dcsi2", "2"}}; // map detector name to its alias.
-  G4int tag_tpe, tag_de, tag_dbrem, tag_multi_pe, tag_md_compt;
-  
-
-  // RecordGammaFinalAngle
-  G4ThreeVector fpostMomentum;
-  G4double postX, postY, postZ;
+  G4int tag_tpe, tag_de, tag_multi_pe, tag_md_compt, tag_out_dying, tag_filt;
+  G4double tag_dbrem_p, tag_dbrem_pe, tag_dbrem_c, tag_dbrem_ce;
+  G4EventManager *evtMgr = G4EventManager::GetEventManager();
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
   
   std::vector<TRAK> SV;

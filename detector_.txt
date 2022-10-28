@@ -1,6 +1,7 @@
+// Define Paremeters
 :p half_inner 2.5 //mm
 :p half_depth  6 // mm
-:p half_dcsi_h 1.5 // mm
+:p half_dcsi_h 0.5 // mm
 :p dcsi_placement_height 0 //mm
 :p foil_thick 0.01 // mm
 :p half_target_thickness 0.5 // mm

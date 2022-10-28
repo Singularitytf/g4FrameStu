@@ -78,7 +78,7 @@ void HistoManager::BeginOfRunAction(const G4Run *aRun)
 
 void HistoManager::EndOfRunAction(const G4Run *aRun)
 {
-  NbOfEvents = aRun->GetNumberOfEventToBeProcessed();
+  G4int NbOfEvents = aRun->GetNumberOfEventToBeProcessed();
   if (NbOfEvents == 0)
     return;
   Save();
@@ -91,20 +91,33 @@ void HistoManager::EndOfRunAction(const G4Run *aRun)
 void HistoManager::BeginOfEventAction(const G4Event *evt)
 {
   // initialisation per event
-  fTCsI = 0.;
+  fEng = 0.;
   fDCsI1 = 0.;
   fDCsI2 = 0.;
-  NumOfScat = 0;
-  label = 0;
-  feBrem = 0.;
-  feLeak = 0.;
+  inner_compt = 0;
+  outter_compt = 0;
   fGenerator.clear();
   fParticle.clear();
   tag_tpe = 0;
   tag_de = 0;
-  tag_dbrem= 0;
+  // brem tags
+  tag_dbrem_p = 0;
+  tag_dbrem_pe = 0;
+  tag_dbrem_c = 0;
+  tag_dbrem_ce = 0;
+  // neutron filter.
+  tag_filt = 0;
+  fx = 0.;
+  fy = 0.;
+  fz = 0.;
+  fdx = 0.;
+  fdy = 0.;
+  fdz = 0.;
+
   tag_multi_pe = 0;
   tag_md_compt= 0;
+  tag_out_dying = 0;
+
   trak.Angle = 0.;
   trak.GeEnergy = 0.;
   trak.NaIEnergy = 0.;
@@ -122,14 +135,12 @@ void HistoManager::EndOfEventAction(const G4Event *)
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void HistoManager::RecordStep(const G4Step *aStep)
-{
+void HistoManager::RecordStep(const G4Step *aStep) {
 
   // get volume of the current step
   //
   fVolume = aStep->GetPreStepPoint()->GetPhysicalVolume();
   fPostVolume = aStep->GetPostStepPoint()->GetTouchableHandle()->GetVolume();
-  fpostMomentum = aStep->GetPostStepPoint()->GetMomentumDirection();
   fPostKEnergy = aStep->GetPostStepPoint()->GetKineticEnergy() / keV;
   //在这一步的过程的反应
   fProcess = aStep->GetPostStepPoint()
@@ -148,90 +159,20 @@ void HistoManager::RecordStep(const G4Step *aStep)
   fevtid = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   // G4cout << "work?" << G4endl;
 
-  // check if a new particle
-  if (p_exist.find(fTrackID) == p_exist.end())
-  {
-    // store info of last particle.
-    // G4cout << aStep->GetPreStepPoint()->GetKineticEnergy()/keV << G4endl;
-
-    p_exist[fTrackID].reset(fTrackID, fParentID,
-                            fevtid, // evt id
-                            fParticle,                                                      // particle type.
-                            aStep->GetPreStepPoint()->GetKineticEnergy() / keV,             // init energy.
-                            fVolume->GetName(),                                             // birth volume
-                            // check if primary particle? if so, fill null to crt process,
-                            // if not, fill creator process.
-                            (fTrackID == 1) ? "NULL" : aTrack->GetCreatorProcess()->GetProcessName());
+  if (fParticle=="neutron"&&
+      aStep->GetPreStepPoint()->GetPhysicalVolume()->GetName()=="filter"&&
+      aStep->GetPostStepPoint()->GetPhysicalVolume()->GetName()=="counter"&&
+      aStep->IsFirstStepInVolume()) {
+    tag_filt = 1;
+    fEng = fPostKEnergy;
+    fx = aStep->GetPostStepPoint()->GetPosition().getX();
+    fy = aStep->GetPostStepPoint()->GetPosition().getY();
+    fz = aStep->GetPostStepPoint()->GetPosition().getZ();
+    fdx = aStep->GetPostStepPoint()->GetMomentumDirection().getX();
+    fdy = aStep->GetPostStepPoint()->GetMomentumDirection().getY();
+    fdz = aStep->GetPostStepPoint()->GetMomentumDirection().getZ();
   }
-  (p_exist[fTrackID]).filter[fVolume->GetName()][fProcess] += ftmpEnergy;
-  // G4cout << "TrackId: " << fTrackID << "\t" << fVolume->GetName() << "\t" << fProcess << "\t"<< p_exist[fTrackID].filter[fVolume->GetName()][fProcess] << G4endl;
-  // G4cout << p_exist[fTrackID].filter["tcsi"]["compt"] << G4endl;
-  
 
-  if (fVolume->GetName() == "tcsi")
-  {
-    fTCsI += ftmpEnergy;
-    // 如果粒子出现在target中，记录trackid。
-    if (fTrackID == 1 && fProcess == "compt") NumOfScat++;
-    if (fTrackID == 1&&fProcess=="phot") tag_tpe = 1;
-    if (fParticle=="e-"
-        &&p_exist[fTrackID].bth_vlm!="tcsi") tag_de = 1;
-    if (fParticle=="gamma"&&p_exist[fTrackID].bth_vlm=="d2csi") {
-        tag_multi_pe = 1;
-    }
-  }
-  if (fVolume->GetName() == "d1csi")
-  {
-    // G4cout << "123" << G4endl;
-    fDCsI1 += ftmpEnergy;
-    if (fParticle=="e-"
-        &&p_exist[fTrackID].bth_vlm!="d1csi") tag_de = 1;
-    if (fTrackID!=1
-        &&aTrack->GetCreatorProcess()->GetProcessName()=="eBrem") tag_dbrem=1;
-    if (fParticle=="gamma"&&p_exist[fTrackID].bth_vlm=="d2csi") {
-          tag_multi_pe = 1;
-    }
-    if (fTrackID==1&&fProcess=="compt") tag_md_compt=1;
-  }
-  if (fVolume->GetName() == "d2csi") {
-    // G4cout << "123" << G4endl;
-    fDCsI2 += ftmpEnergy;
-    if (fParticle=="e-"
-        &&p_exist[fTrackID].bth_vlm!="d2csi") tag_de = 1;
-    if (fTrackID!=1
-        &&aTrack->GetCreatorProcess()->GetProcessName()=="eBrem") tag_dbrem=1;
-    if (fParticle=="gamma"&&p_exist[fTrackID].bth_vlm=="d1csi") {
-          tag_multi_pe = 1;
-    } 
-    if (fTrackID==1&&fProcess=="compt") tag_md_compt=1;
-  }
-        
-
-  //   if (fTrackID == 1 && fParentID == 0) {
-  //   auto A = aTrack->GetCurrentStepNumber();
-  //   auto B = aTrack->GetPosition().x();
-  //   auto C = aTrack->GetPosition().y();
-  //   auto D = aTrack->GetPosition().z();
-  //   auto E = aTrack->GetKineticEnergy();
-  //   auto F = aStep->GetTotalEnergyDeposit();
-  //   auto G = aStep->GetStepLength();
-  //   auto H = aTrack->GetTrackLength();
-
-  //   G4String I = " ";
-  //   if (aTrack->GetNextVolume() != 0)
-  //   {
-  //     I = aTrack->GetNextVolume()->GetName();
-  //   }
-  //   else
-  //   {
-  //     I = "OutWorld";
-  //   }
-
-  //   auto J = fProcess;
-
-  //   STEP S(A, B, C, D, E, F, G, H, I, J);
-  //   trak.v.push_back(S);
-  // }
 }
 
 // ....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -244,8 +185,7 @@ void HistoManager::Book(const G4Run *aRun)
   auto analysisManager = G4AnalysisManager::Instance();
   analysisManager->Reset();
   G4bool fRootFile = analysisManager->OpenFile();
-  if (!fRootFile)
-  {
+  if (!fRootFile) {
     G4cout << " HistoManager::Book :"
            << " problem creating the ROOT TFile "
            << G4endl;
@@ -254,55 +194,14 @@ void HistoManager::Book(const G4Run *aRun)
   fFactoryOn = true;
   if ( !(aRun->GetRunID()) ) {
     analysisManager->CreateNtuple("eng", "");
-    analysisManager->CreateNtupleDColumn(0, "tc");
-    analysisManager->CreateNtupleDColumn(0, "dc1");
-    analysisManager->CreateNtupleDColumn(0, "dc2");
-    analysisManager->CreateNtupleIColumn(0, "n");
-    analysisManager->CreateNtupleIColumn(0, "evtid"); // particle.
-    analysisManager->CreateNtupleIColumn(0, "p0");
-    analysisManager->CreateNtupleIColumn(0, "b1");
-    analysisManager->CreateNtupleIColumn(0, "e1");
-    analysisManager->CreateNtupleIColumn(0, "m1");
-    analysisManager->CreateNtupleIColumn(0, "mdc"); // multi-detector compton.
-
-    // analysisManager->CreateNtupleDColumn(0, "x");
-    // analysisManager->CreateNtupleDColumn(0, "y");
-    // analysisManager->CreateNtupleDColumn(0, "z");
-    // analysisManager->CreateNtupleDColumn(0, "e");
+    analysisManager->CreateNtupleDColumn(0, "ne"); // neutron energy.
+    analysisManager->CreateNtupleDColumn(0, "x");
+    analysisManager->CreateNtupleDColumn(0, "y");
+    analysisManager->CreateNtupleDColumn(0, "z");
+    analysisManager->CreateNtupleDColumn(0, "px");
+    analysisManager->CreateNtupleDColumn(0, "py");
+    analysisManager->CreateNtupleDColumn(0, "pz");
     analysisManager->FinishNtuple(0);
-
-    analysisManager->CreateNtuple("e", "");
-    analysisManager->CreateNtupleIColumn(1, "tid");
-    analysisManager->CreateNtupleIColumn(1, "pid");
-    analysisManager->CreateNtupleIColumn(1, "evtid");
-    analysisManager->CreateNtupleSColumn(1, "ctrp");  // creator process
-    analysisManager->CreateNtupleSColumn(1, "bvm");   // birth place
-    analysisManager->CreateNtupleDColumn(1, "ie");    // init energy
-    analysisManager->CreateNtupleDColumn(1, "brem0"); // 0 for target CsI.
-    analysisManager->CreateNtupleDColumn(1, "msc0");  // 0 for target CsI.
-    analysisManager->CreateNtupleDColumn(1, "eion0"); // 0 for target CsI.
-    analysisManager->CreateNtupleDColumn(1, "brem1"); // 1 for detector CsI1.
-    analysisManager->CreateNtupleDColumn(1, "msc1");  // 1 for detector CsI1.
-    analysisManager->CreateNtupleDColumn(1, "eion1"); // 1 for detector CsI1.
-    analysisManager->CreateNtupleDColumn(1, "brem2"); // 2 for detector CsI2.
-    analysisManager->CreateNtupleDColumn(1, "msc2");  // 2 for detector CsI2.
-    analysisManager->CreateNtupleDColumn(1, "eion2"); // 2 for detector CsI2.
-    analysisManager->FinishNtuple(1);
-
-    analysisManager->CreateNtuple("gamma", "");
-    analysisManager->CreateNtupleIColumn(2, "tid");
-    analysisManager->CreateNtupleIColumn(2, "pid");
-    analysisManager->CreateNtupleIColumn(2, "evtid");
-    analysisManager->CreateNtupleSColumn(2, "ctrp");   // creator process
-    analysisManager->CreateNtupleSColumn(2, "bvm");    // birth place
-    analysisManager->CreateNtupleDColumn(2, "ie");     // init energy
-    analysisManager->CreateNtupleDColumn(2, "pe0");    // 0 for target CsI.
-    analysisManager->CreateNtupleDColumn(2, "compt0"); // 0 for target CsI.
-    analysisManager->CreateNtupleDColumn(2, "pe1");    // 1 for detector CsI1.
-    analysisManager->CreateNtupleDColumn(2, "compt1"); // 1 for detector CsI1.
-    analysisManager->CreateNtupleDColumn(2, "pe2");    // 2 for detector CsI2.
-    analysisManager->CreateNtupleDColumn(2, "compt2"); // 2 for detector CsI2.
-    analysisManager->FinishNtuple(2);
   }
   
   G4cout << "\n----> Output file is open." << G4endl;
@@ -314,82 +213,16 @@ void HistoManager::FillTuple()
   // fill ntuple
   //
   G4AnalysisManager *analysisManager = G4AnalysisManager::Instance();
-
-  if (fTCsI*fDCsI1*fDCsI2!=0&&((fDCsI2 < 20 && fDCsI1 > 30 && fDCsI1 < 37) || (fDCsI1 < 20 && fDCsI2 > 30 && fDCsI2 < 37)) && fTCsI + fDCsI1 + fDCsI2 > 660) {
-    for (auto i : p_exist)
-    {
-      if (i.second.type == "e-")
-      {
-        analysisManager->FillNtupleIColumn(1, 0, i.second.tid);    // tid
-        analysisManager->FillNtupleIColumn(1, 1, i.second.pid);    // pid
-        analysisManager->FillNtupleIColumn(1, 2, i.second.evt_id); // evtid
-        analysisManager->FillNtupleSColumn(1, 3, i.second.crt_proc);
-        analysisManager->FillNtupleSColumn(1, 4, i.second.bth_vlm);
-        analysisManager->FillNtupleDColumn(1, 5, i.second.init_eng);
-        analysisManager->FillNtupleDColumn(1, 6, i.second.filter["tcsi"]["eBrem"]); // 0 pe
-        analysisManager->FillNtupleDColumn(1, 7, i.second.filter["tcsi"]["msc"]);
-        analysisManager->FillNtupleDColumn(1, 8, i.second.filter["tcsi"]["eIoni"]); // 0 compt
-        analysisManager->FillNtupleDColumn(1, 9, i.second.filter["d1csi"]["eBrem"]);
-        analysisManager->FillNtupleDColumn(1, 10, i.second.filter["d1csi"]["msc"]);
-        analysisManager->FillNtupleDColumn(1, 11, i.second.filter["d1csi"]["eIoni"]);
-        analysisManager->FillNtupleDColumn(1, 12, i.second.filter["d2csi"]["eBrem"]);
-        analysisManager->FillNtupleDColumn(1, 13, i.second.filter["d2csi"]["msc"]);
-        analysisManager->FillNtupleDColumn(1, 14, i.second.filter["d2csi"]["eIoni"]);
-        analysisManager->AddNtupleRow(1);
-      }
-      if (i.second.type == "gamma")
-      {
-        // G4cout << "work?" << G4endl;
-        //     G4cout << G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID() << G4endl;
-        // G4cout << "..." << fTrackID << G4endl;
-        analysisManager->FillNtupleIColumn(2, 0, i.second.tid);    // tid
-        analysisManager->FillNtupleIColumn(2, 1, i.second.pid);    // pid
-        analysisManager->FillNtupleIColumn(2, 2, i.second.evt_id); // evtid
-        analysisManager->FillNtupleSColumn(2, 3, i.second.crt_proc);
-        analysisManager->FillNtupleSColumn(2, 4, i.second.bth_vlm);
-        analysisManager->FillNtupleDColumn(2, 5, i.second.init_eng);
-        analysisManager->FillNtupleDColumn(2, 6, i.second.filter["tcsi"]["phot"]);  // 0 pe
-        analysisManager->FillNtupleDColumn(2, 7, i.second.filter["tcsi"]["compt"]); // 0 compt
-        analysisManager->FillNtupleDColumn(2, 8, i.second.filter["d1csi"]["phot"]);
-        analysisManager->FillNtupleDColumn(2, 9, i.second.filter["d1csi"]["compt"]);
-        analysisManager->FillNtupleDColumn(2, 10, i.second.filter["d2csi"]["phot"]);
-        analysisManager->FillNtupleDColumn(2, 11, i.second.filter["d2csi"]["compt"]);
-        analysisManager->AddNtupleRow(2);
-      }
-    }
-    analysisManager->FillNtupleDColumn(0, 0, fTCsI);
-    analysisManager->FillNtupleDColumn(0, 1, fDCsI1);
-    analysisManager->FillNtupleDColumn(0, 2, fDCsI2);
-    analysisManager->FillNtupleIColumn(0, 3, NumOfScat);
-    analysisManager->FillNtupleIColumn(0, 4, fevtid);
-    analysisManager->FillNtupleIColumn(0, 5, tag_tpe);
-    analysisManager->FillNtupleIColumn(0, 6, tag_dbrem);
-    analysisManager->FillNtupleIColumn(0, 7, tag_de);
-    analysisManager->FillNtupleIColumn(0, 8, tag_multi_pe);
-    analysisManager->FillNtupleIColumn(0, 9, tag_md_compt);
+  if (tag_filt) {
+    analysisManager->FillNtupleDColumn(0, 0, fEng);
+    analysisManager->FillNtupleDColumn(0, 1, fx);
+    analysisManager->FillNtupleDColumn(0, 2, fy);
+    analysisManager->FillNtupleDColumn(0, 3, fz);
+    analysisManager->FillNtupleDColumn(0, 4, fdx);
+    analysisManager->FillNtupleDColumn(0, 5, fdy);
+    analysisManager->FillNtupleDColumn(0, 6, fdz);
     analysisManager->AddNtupleRow(0);
   }
-
-  // if (fTCsI!=0&&(fDCsI1!=0&&fDCsI2!=0)){
-  //   //and fDCsI1 != 0
-  // analysisManager->FillNtupleDColumn(0, 0, fTCsI);
-  // analysisManager->FillNtupleDColumn(0, 1, fDCsI1);
-  // analysisManager->FillNtupleDColumn(0, 2, fDCsI2);
-  // analysisManager->FillNtupleIColumn(0, 3, NumOfScat);
-  // analysisManager->FillNtupleDColumn(0, 4, feBrem);
-  // analysisManager->FillNtupleDColumn(0, 5, feLeak);
-
-  //   // analysisManager->FillNtupleDColumn(0, 5, fPtce);
-  //   analysisManager->AddNtupleRow(0);
-  // }
-
-  // if (fTCsI!=0){
-  //   // analysisManager->FillNtupleDColumn(1, 1, fEeBremO);
-  //   analysisManager->FillNtupleDColumn(1, 0, fTCsI);
-  //   // analysisManager->FillNtupleIColumn(0, 1, NumOfScat);
-  //   analysisManager->AddNtupleRow(1);
-  // }
-  //
 
   // trak.Angle = fAngle;
   // trak.GeEnergy = fGeEnergy;

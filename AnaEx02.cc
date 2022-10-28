@@ -34,8 +34,6 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #include "G4UImanager.hh"
-#include "FTFP_BERT.hh"
-#include "QBBC.hh"
 #include "G4VModularPhysicsList.hh"
 #include "ActionInitialization.hh"
 #include "DetectorConstruction.hh"
@@ -78,7 +76,7 @@ int main(int argc,char** argv)
   DetectorConstruction* detector = new DetectorConstruction;
   runManager->SetUserInitialization(detector);
   G4PhysListFactory factory;
-  G4VModularPhysicsList* physlist = factory.GetReferencePhysList("QBBC_LIV");
+  G4VModularPhysicsList* physlist = factory.GetReferencePhysList("Shielding");
 
   runManager->SetUserInitialization(physlist);
   runManager->SetUserInitialization(new ActionInitialization(detector));

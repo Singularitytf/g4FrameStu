@@ -1,0 +1,35 @@
+/control/verbose 0
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+
+#/process/em/fluo false
+#/run/numberOfThreads 1
+
+# Initialize G4 kernel
+/run/initialize
+
+#/gps/particle geantino # for debuging
+/gps/particle gamma
+
+/gps/pos/type Volume 
+/gps/pos/shape Para
+/gps/pos/centre 0. 0. 0. cm
+/gps/pos/halfx .5 mm
+/gps/pos/halfy .5 mm
+/gps/pos/halfz 3. mm 
+/gps/pos/paralp 0
+/gps/pos/parthe 0
+/gps/pos/parphi 0
+/gps/ang/type iso
+
+/gps/ene/type Pow
+/gps/ene/alpha 0
+/gps/ene/min 1 keV
+/gps/ene/max 20 keV
+
+
+/run/printProgress 10000000
+# Set file name.
+/analysis/setFileName softyEff_h_x2.5_1e8.root
+/run/beamOn 100000000
